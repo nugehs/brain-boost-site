@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Brain Boost Buddy — Screen time, earned</title>
 <link rel="icon" type="image/png" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&display=swap" rel="stylesheet">
 <meta name="description" content="Brain Boost Buddy locks your child's laptop behind a short learning challenge. They pick a topic, answer the questions, and the laptop unlocks the moment they pass. Maths, English and Money for ages 9–11 (UK KS2).">
 <style>
   :root{
@@ -17,6 +20,11 @@
     --muted:#9fb0e0;
     --border:rgba(159,176,224,.22);
     --radius:16px;
+    --ease-out:cubic-bezier(0.22,1,0.36,1);
+    --dur-med:260ms;
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html{scroll-behavior:smooth}
@@ -26,7 +34,16 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
     line-height:1.6;
     -webkit-font-smoothing:antialiased;
+    position:relative;
   }
+  h1,h2,h3,.wordmark{font-family:'Baloo 2','Segoe UI',system-ui,sans-serif;}
+  .sky{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .sky i{position:absolute;width:3px;height:3px;border-radius:50%;background:#eef3ff;opacity:.4;
+    animation:twinkle 5s var(--ease-out) infinite alternate;}
+  @keyframes twinkle{from{opacity:.2;transform:scale(.85)}to{opacity:.75;transform:scale(1.1)}}
+  header,main,footer{position:relative;z-index:1;}
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity var(--dur-med) var(--ease-out),transform var(--dur-med) var(--ease-out);}
+  .reveal.in{opacity:1;transform:none;}
   .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
   a{color:var(--cyan)}
   h1,h2,h3{line-height:1.2;letter-spacing:-.01em}
@@ -54,8 +71,9 @@
   .btn{
     display:inline-block;text-decoration:none;font-weight:700;
     border-radius:12px;padding:14px 26px;font-size:1rem;
-    transition:transform .12s ease,box-shadow .12s ease;
+    transition:transform var(--dur-med) var(--ease-out),box-shadow var(--dur-med) var(--ease-out),border-color var(--dur-med);
   }
+  .btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px;}
   .btn-primary{
     background:var(--accent);color:#1b1500;
     box-shadow:0 6px 24px rgba(255,210,63,.25);
@@ -79,7 +97,11 @@
     background:linear-gradient(160deg,var(--panel),var(--panel-soft));
     border:1px solid var(--border);border-radius:20px;
     padding:26px;box-shadow:0 24px 60px rgba(0,0,0,.45);
+    animation:mockFloat 4s var(--ease-out) infinite alternate;
   }
+  @keyframes mockFloat{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+  .mock-answers .picked{animation:pickPop .6s var(--ease-out);}
+  @keyframes pickPop{0%{transform:scale(.92)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
   .mock-bar{display:flex;gap:6px;margin-bottom:18px}
   .mock-bar span{width:10px;height:10px;border-radius:50%;background:var(--border)}
   .mock-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:.85rem;color:var(--muted)}
@@ -104,12 +126,17 @@
   .card{
     background:var(--panel);border:1px solid var(--border);
     border-radius:var(--radius);padding:26px;
+    opacity:0;transform:translateY(14px);
+    transition:opacity var(--dur-med) var(--ease-out),transform var(--dur-med) var(--ease-out),border-color var(--dur-med);
   }
+  .reveal.in .card.in{opacity:1;transform:none;}
   .step-num{
     display:inline-flex;align-items:center;justify-content:center;
     width:34px;height:34px;border-radius:50%;
     background:var(--accent);color:#1b1500;font-weight:800;margin-bottom:14px;
-  }
+    transition:transform var(--dur-med) var(--ease-out);}
+  .card.in .step-num{animation:stepPop .5s var(--ease-out);}
+  @keyframes stepPop{0%{transform:scale(.6)}70%{transform:scale(1.12)}100%{transform:scale(1)}}
   .card h3{margin-bottom:8px;font-size:1.15rem}
   .card p{color:var(--muted);font-size:.97rem}
 
@@ -176,7 +203,9 @@
   details{
     background:var(--panel);border:1px solid var(--border);
     border-radius:12px;margin-bottom:12px;overflow:hidden;
+    transition:border-color var(--dur-med),box-shadow var(--dur-med);
   }
+  details[open]{border-color:rgba(255,210,63,.35);box-shadow:0 8px 24px rgba(0,0,0,.2);}
   summary{
     cursor:pointer;padding:18px 20px;font-weight:700;list-style:none;
     display:flex;justify-content:space-between;align-items:center;gap:12px;
@@ -198,6 +227,7 @@
 </style>
 </head>
 <body>
+<div class="sky" id="sky" aria-hidden="true"></div>
 
 <header>
   <div class="wrap nav">
@@ -206,8 +236,7 @@
       <a class="hide-sm" href="#how-it-works">How it works</a>
       <a class="hide-sm" href="#subjects">Subjects</a>
       <a class="hide-sm" href="#faq">FAQ</a>
-      <!-- Paste your Lemon Squeezy or Paddle checkout link wherever you see #REPLACE-WITH-CHECKOUT-URL (3 places: header, hero, pricing). -->
-      <a class="btn btn-primary btn-sm" href="#REPLACE-WITH-CHECKOUT-URL">Buy now</a>
+      <a class="btn btn-primary btn-sm" href="https://brainboostbuddy.lemonsqueezy.com/checkout">Buy now</a>
     </nav>
   </div>
 </header>
@@ -220,8 +249,7 @@
       <h1>The laptop unlocks when the <em>learning</em> is done.</h1>
       <p>Brain Boost Buddy greets your child with a fullscreen gate when the laptop opens. They pick a subject and topic, answer a few questions, and the laptop unlocks the moment they pass. You hold the parent PIN — unlock, grant another try, or change the rules any time.</p>
       <div class="hero-ctas">
-        <!-- Paste your Lemon Squeezy or Paddle checkout link here. -->
-        <a class="btn btn-primary" href="#REPLACE-WITH-CHECKOUT-URL">Buy for Mac &amp; Windows</a>
+        <a class="btn btn-primary" href="https://brainboostbuddy.lemonsqueezy.com/checkout">Buy for Mac &amp; Windows</a>
         <a class="btn btn-ghost" href="#how-it-works">See how it works</a>
       </div>
       <p class="hero-note">One-time purchase · UK KS2, ages 9–11 · Signed &amp; notarized by Apple on macOS</p>
@@ -245,7 +273,7 @@
   </div>
 
   <!-- ======== HOW IT WORKS ======== -->
-  <section id="how-it-works">
+  <section id="how-it-works" class="reveal">
     <div class="wrap">
       <p class="kicker">How it works</p>
       <h2>A simple daily routine, not a battle</h2>
@@ -271,7 +299,7 @@
   </section>
 
   <!-- ======== SUBJECTS ======== -->
-  <section id="subjects">
+  <section id="subjects" class="reveal">
     <div class="wrap">
       <p class="kicker">Subjects</p>
       <h2>3 subjects, 30 topics, endless questions</h2>
@@ -333,7 +361,7 @@
   </section>
 
   <!-- ======== LEARNING-FIRST ======== -->
-  <section id="learning-first">
+  <section id="learning-first" class="reveal">
     <div class="wrap split">
       <div>
         <p class="kicker">Learning first</p>
@@ -354,7 +382,7 @@
   </section>
 
   <!-- ======== PARENT CONTROLS ======== -->
-  <section id="parent-controls">
+  <section id="parent-controls" class="reveal">
     <div class="wrap">
       <div class="controls-card">
         <p class="kicker">Parent controls</p>
@@ -373,7 +401,7 @@
   </section>
 
   <!-- ======== PRICING ======== -->
-  <section id="pricing">
+  <section id="pricing" class="reveal">
     <div class="wrap center">
       <p class="kicker">Pricing</p>
       <h2>One price. Yours forever.</h2>
@@ -389,15 +417,14 @@
           <li>All 3 subjects, all 30 topics</li>
           <li>Free updates</li>
         </ul>
-        <!-- Paste your Lemon Squeezy or Paddle checkout link here. -->
-        <a class="btn btn-primary" href="#REPLACE-WITH-CHECKOUT-URL">Buy Brain Boost Buddy</a>
+        <a class="btn btn-primary" href="https://brainboostbuddy.lemonsqueezy.com/checkout">Buy Brain Boost Buddy</a>
         <p class="delivery-note">After purchase, your download link and licence key arrive by email — usually within a couple of minutes.</p>
       </div>
     </div>
   </section>
 
   <!-- ======== FAQ ======== -->
-  <section id="faq">
+  <section id="faq" class="reveal">
     <div class="wrap">
       <div class="center">
         <p class="kicker">FAQ</p>
@@ -470,5 +497,22 @@
   </div>
 </footer>
 
+<script>
+(function(){
+  const sky=document.getElementById('sky');
+  if(sky)[[12,15],[28,32],[45,10],[62,48],[78,22],[90,58],[18,72],[52,82]].forEach(([l,t],i)=>{
+    const s=document.createElement('i'); s.style.left=l+'%'; s.style.top=t+'%'; s.style.animationDelay=(i*.4)+'s'; sky.appendChild(s);
+  });
+  const io=new IntersectionObserver(es=>{
+    es.forEach(e=>{
+      if(!e.isIntersecting)return;
+      e.target.classList.add('in');
+      e.target.querySelectorAll('.card').forEach((c,i)=>{ c.style.transitionDelay=(i*70)+'ms'; c.classList.add('in'); });
+      io.unobserve(e.target);
+    });
+  },{threshold:.12,rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+})();
+</script>
 </body>
 </html>
